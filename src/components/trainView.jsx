@@ -1,94 +1,249 @@
-import {useState, useEffect} from "react"
+import React, {createRef, useState, useEffect, Component} from "react"
 import trainAPI from "../axios/axios"
 import StationCardView from "./stationCard"
 import {v4 as uuidv4} from 'uuid';
+import AffolternImage from "/src/assets/Affoltern.png"
+import Connection from "./connection.jsx";
+import Carousel from "react-multi-carousel";
+import "react-multi-carousel/lib/styles.css";
+import {MapInteractionCSS} from 'react-map-interaction';
+import Zoom from 'react-img-zoom'
+
+import ReactImageZoom from 'react-image-zoom';
+import {TransformWrapper, TransformComponent} from "react-zoom-pan-pinch";
 
 const TrainView = () => {
     const [affolternTrain, setAffolternTrain] = useState({"station": {"name": "Name"}, "stationboard": []})
     const [zentenBus, setZentenBus] = useState({"station": {"name": "Name"}, "stationboard": []})
     const [fromInput, setFromInput] = useState("")
     const [toInput, setToInput] = useState("")
+    const [styleTrain, setStyleTrain] = useState("border-b-2 border-solid")
+    const [styleBus, setStyleBus] = useState("hover:border-b-2 border-solid")
+    const [possibleOrigins, setPossibleOrigins] = useState([])
+    const [possibleDestinations, setPossibleDestinations] = useState([])
+    const [connections, setConnections] = useState([])
+    const [submitClicked, setSubmitClicked] = useState(false)
+
+    const ref = createRef(null)
 
     useEffect(() => {
         fetchTrainsAffoltern();
         fetchBusZentenhausplatz();
+
     }, []);
 
     const fetchTrainsAffoltern = () => {
-        trainAPI.get("stationboard?id=8503008&limit=10")
+        trainAPI.get("stationboard?id=8503008&limit=9")
             .then(response => {
                 setAffolternTrain(response.data)
             })
             .catch(error => console.log(error))
     };
     const fetchBusZentenhausplatz = () => {
-        trainAPI.get("stationboard?id=8576262&limit=10")
-            .then(response => {
-                setZentenBus(response.data)
-                console.log("")
-            })
-            .catch(error => console.log(error))
-    };
-
-    const fetchTrainStations = (trainstationInput) => {
-        trainAPI.get("stationboard?id=8576262&limit=10")
+        trainAPI.get("stationboard?id=8576262&limit=9")
             .then(response => {
                 setZentenBus(response.data)
             })
             .catch(error => console.log(error))
     };
 
-    const handleInputFrom = (e) =>{
+    const fetchTrainStations = (input, requestFrom) => {
+        trainAPI.get(`locations?query=${input}&limit=10`)
+            .then(response => {
+                if (requestFrom == "Origin") {
+                    setPossibleOrigins(response.data.stations)
+                } else {
+                    setPossibleDestinations(response.data.stations)
+                }
+            })
+            .catch(error => console.log(error))
+    }
+
+    const handleInputFrom = (e) => {
         e.preventDefault()
         setFromInput(e.target.value)
-        console.log(fromInput)
+        fetchTrainStations(e.target.value, "Origin")
     }
 
-    const handleInputTo= (e) =>{
+    const handleInputTo = (e) => {
         e.preventDefault()
-        setFromInput(fromInput)
+        setToInput(e.target.value)
+        fetchTrainStations(e.target.value, "Destination")
     }
+
+    const styleActive = "border-b-2 border-solid"
+    const styleInactive = "hover:border-b-2 border-solid"
+
+    const handleClickTrainBuss = (e) => {
+        e.preventDefault()
+        if (e.target.id == "train") {
+            setStyleTrain(styleActive)
+            setStyleBus(styleInactive)
+        } else {
+            setStyleBus(styleActive)
+            setStyleTrain(styleInactive)
+        }
+
+    }
+
+    const fetchConections = (origin, destination) => {
+        trainAPI.get(`connections?from=${origin}&to=${destination}`)
+            .then(response => {
+                setConnections(response.data.connections)
+            })
+            .catch(error => console.log(error))
+    }
+
+    const handleOnSubmit = (e) => {
+        e.preventDefault()
+        fetchConections(fromInput, toInput)
+        setSubmitClicked(!submitClicked)
+    }
+
+    const responsive = {
+        superLargeDesktop: {
+            // the naming can be any, depends on you.
+            breakpoint: {max: 4000, min: 3000},
+            items: 5
+        },
+        desktop: {
+            breakpoint: {max: 3000, min: 1024},
+            items: 3
+        },
+        tablet: {
+            breakpoint: {max: 1024, min: 464},
+            items: 2
+        },
+        mobile: {
+            breakpoint: {max: 464, min: 0},
+            items: 1
+        }
+    };
+
+    const props = {width: 400, height: 250, zoomWidth: 500, img: AffolternImage};
 
 
     return (
-        <div className="flex flex-col justify-center">
-            <h1 className="font-bold  justify-center">
-                Connections from Home
-            </h1>
+        <div ref={ref} className="flex flex-col justify-center">
+            <div className="flex flex-col justify-center items-center">
+                <img src={AffolternImage} className={"h-20 w-2/5"}/>
+                <h1 className="font-bold  justify-center">
+                    Panchito's trains from home
+                </h1>
+            </div>
+            <div className="flex justify-center">
+                <ul className="flex w-full justify-center gap-4">
+                    <li className={styleTrain} id="train" onClick={handleClickTrainBuss}>Trains</li>
+                    <li className={styleBus} id="buses" onClick={handleClickTrainBuss}>Busses</li>
+                </ul>
+            </div>
+            <MapInteractionCSS>
+                <img src={AffolternImage}/>
+            </MapInteractionCSS>
+            <Zoom
+                img={AffolternImage}
+                zoomScale={3}
+                width={600}
+                height={600}
+            />
+            <ReactImageZoom {...props} />
+            <TransformWrapper
+                initialScale={1}
+                initialPositionX={200}
+                initialPositionY={100}
+            >
+                {({zoomIn, zoomOut, resetTransform, ...rest}) => (
+                    <React.Fragment>
+                        <div className="tools">
+                            <button onClick={() => zoomIn()}>+</button>
+                            <button onClick={() => zoomOut()}>-</button>
+                            <button onClick={() => resetTransform()}>x</button>
+                        </div>
+                        <TransformComponent>
+                            <img src={AffolternImage} alt="test"/>
+                            <div>Example text</div>
+                        </TransformComponent>
+                    </React.Fragment>
+                )}
+            </TransformWrapper>
+            {styleTrain == styleActive ?
+                <div>
+                    <div>
+                        <h2>
+                            {affolternTrain.station.name}
+                        </h2>
+                    </div>
+                    <div className="grid grid-cols-4 gap-4">
+                        <Carousel responsive={responsive}
+                                  autoPlay={true}
+                                  autoPlaySpeed={1000}
+                                  keyBoardControl={true}
+                                  customTransition="all .5"
+                                  transitionDuration={500}
+
+                        >
+
+                            {
+                                affolternTrain.stationboard.map((transport) => {
+                                    return (
+                                        <div className="border border-indigo-600" key={uuidv4()}>
+                                            <StationCardView transport={transport}/>
+                                        </div>
+                                    )
+                                })
+                            }
+                        </Carousel>
+                    </div>
+                </div> :
+                <div>
+                    <h2>
+                        {zentenBus.station.name}
+                    </h2>
+                    <div className="grid grid-cols-4 gap-4">
+                        {
+                            zentenBus.stationboard.map((transport) => {
+                                return (
+                                    <div className="border border-indigo-600" key={uuidv4()}>
+                                        <StationCardView transport={transport}/>
+                                    </div>
+                                )
+                            })
+                        }
+                    </div>
+                </div>
+
+
+            }
             <div>
-                <label htmlFor={"from"}> From</label>
-                <input type={"text"} id={"from"} value={fromInput} onChange={handleInputFrom}/>
-                <label htmlFor={"to"}> To</label>
-                <input type={"text"} id={"to"} value={fromInput} onChange={handleInputTo}/>
+                <form onSubmit={handleOnSubmit}>
+                    <label htmlFor={"from"}> From </label>
+                    <input id="from" type="text" list="from-list" onChange={handleInputFrom} value={fromInput}/>
+                    <datalist id="from-list">
+                        {possibleOrigins.map(
+                            (opt, id) => <option key={id}>{opt.name}</option>
+                        )}
+                    </datalist>
+                    <label htmlFor={"to"}> To</label>
+                    <input type={"text"} id={"to"} list="to-list" value={toInput} onChange={handleInputTo}/>
+                    <datalist id="to-list">
+                        {possibleDestinations.map(
+                            (opt, id) => <option key={id * 1000}>{opt.name}</option>
+                        )}
+                    </datalist>
+                    <button type={"submit"}>
+                        Submit
+                    </button>
+                </form>
             </div>
             <div>
-                <h2>
-                    {affolternTrain.station.name}
-                </h2>
-            </div>
-            <div className="grid grid-cols-4 gap-4">
-                {
-                    affolternTrain.stationboard.map((transport) => {
+                {submitClicked ?
+                    connections.map((connection) => {
                         return (
-                            <div className="border border-indigo-600" key={uuidv4()}>
-                                <StationCardView transport={transport}/>
-                            </div>
+                            <Connection connection={connection}/>
                         )
                     })
-                }
-            </div>
-            <h2>
-                {zentenBus.station.name}
-            </h2>
-            <div className="grid grid-cols-4 gap-4">
-                {
-                    zentenBus.stationboard.map((transport) => {
-                        return (
-                            <div className="border border-indigo-600" key={uuidv4()}>
-                                <StationCardView transport={transport}/>
-                            </div>
-                        )
-                    })
+                    :
+                    null
                 }
             </div>
         </div>

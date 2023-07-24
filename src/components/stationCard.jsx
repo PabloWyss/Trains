@@ -1,5 +1,4 @@
 const StationCardView = ({transport}) =>{
-    console.log(transport)
 
     return(
         <div className="grid grid-cols-2 gap-">
