@@ -6,11 +6,6 @@ import AffolternImage from "/src/assets/Affoltern.png"
 import Connection from "./connection.jsx";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
-import {MapInteractionCSS} from 'react-map-interaction';
-import Zoom from 'react-img-zoom'
-
-import ReactImageZoom from 'react-image-zoom';
-import {TransformWrapper, TransformComponent} from "react-zoom-pan-pinch";
 
 const TrainView = () => {
     const [affolternTrain, setAffolternTrain] = useState({"station": {"name": "Name"}, "stationboard": []})
@@ -137,56 +132,35 @@ const TrainView = () => {
                     <li className={styleBus} id="buses" onClick={handleClickTrainBuss}>Busses</li>
                 </ul>
             </div>
-            <MapInteractionCSS>
-                <img src={AffolternImage}/>
-            </MapInteractionCSS>
-            <Zoom
-                img={AffolternImage}
-                zoomScale={3}
-                width={600}
-                height={600}
-            />
-            <ReactImageZoom {...props} />
-            <TransformWrapper
-                initialScale={1}
-                initialPositionX={200}
-                initialPositionY={100}
-            >
-                {({zoomIn, zoomOut, resetTransform, ...rest}) => (
-                    <React.Fragment>
-                        <div className="tools">
-                            <button onClick={() => zoomIn()}>+</button>
-                            <button onClick={() => zoomOut()}>-</button>
-                            <button onClick={() => resetTransform()}>x</button>
-                        </div>
-                        <TransformComponent>
-                            <img src={AffolternImage} alt="test"/>
-                            <div>Example text</div>
-                        </TransformComponent>
-                    </React.Fragment>
-                )}
-            </TransformWrapper>
             {styleTrain == styleActive ?
-                <div>
+                <div className={"flex flex-col"}>
                     <div>
                         <h2>
                             {affolternTrain.station.name}
                         </h2>
                     </div>
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="flex gap-4 w-full items-center justify-center">
                         <Carousel responsive={responsive}
-                                  autoPlay={true}
-                                  autoPlaySpeed={1000}
-                                  keyBoardControl={true}
-                                  customTransition="all .5"
-                                  transitionDuration={500}
+                                  // autoPlay={true}
+                                  // autoPlaySpeed={2000}
+                                  // keyBoardControl={true}
+                                  // customTransition="all 1"
+                                  // transitionDuration={500}
+                                  infinite={true}
+                                  ssr={true}
+                                  swipeable={false}
+                                  draggable={true}
+                                  showDots={false}
+                                  containerClass="carousel-container"
+                                  dotListClass="custom-dot-list-style"
+                                  itemClass="carousel-item-padding-40-px"
+                                  className="w-4/5"
 
                         >
-
                             {
                                 affolternTrain.stationboard.map((transport) => {
                                     return (
-                                        <div className="border border-indigo-600" key={uuidv4()}>
+                                        <div className="border border-indigo-600 gap-4 w-full" key={uuidv4()}>
                                             <StationCardView transport={transport}/>
                                         </div>
                                     )
