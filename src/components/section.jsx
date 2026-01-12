@@ -1,4 +1,4 @@
-import PassList from "./passList.jsx";
+import PassList from "./passList.tsx";
 
 const Section = ({section}) =>{
     console.log(section)

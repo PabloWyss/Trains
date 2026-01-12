@@ -3,7 +3,7 @@ import trainAPI from "../axios/axios"
 import StationCardView from "./stationCard"
 import {v4 as uuidv4} from 'uuid';
 import AffolternImage from "/src/assets/Affoltern.png"
-import Connection from "./connection.jsx";
+import Connection from "./connection.tsx";
 import Carousel from "react-multi-carousel";
 import "react-multi-carousel/lib/styles.css";
 
